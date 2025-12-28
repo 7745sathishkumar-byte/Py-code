@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Arabian Cuisine — Order Online</title>
+<style>
+  :root{
+    --accent:#9b2b2b;
+    --muted:#6b6b6b;
+    --card-bg:#ffffff;
+    --bg:#f6f3ef;
+    --radius:12px;
+    --gold:#d4a017;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  html { scroll-behavior: smooth; }
+  body{margin:0;background:linear-gradient(180deg,#fff 0%, #f6f3ef 100%);color:#222}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:var(--card-bg);box-shadow:0 6px 20px rgba(0,0,0,0.06);position:sticky;top:0;z-index:60}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#ff7043);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px}
+  h1{font-size:18px;margin:0}
+  .small{font-size:13px;color:var(--muted)}
+  .actions{display:flex;gap:12px;align-items:center}
+  button.primary{background:var(--accent);color:white;border:none;padding:10px 14px;border-radius:10px;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid #eee;padding:8px 12px;border-radius:10px;cursor:pointer}
+  /* Layout with fixed left sidebar, main, and right cart */
+  .container{max-width:1200px;margin:28px auto;padding:0 18px;display:grid;grid-template-columns:200px 1fr 360px;gap:22px;align-items:start}
+  /* Left sidebar */
+  aside.sidebar{background:transparent;position:sticky;top:92px;height:fit-content;padding:8px 6px}
+  .sidebar .nav{display:flex;flex-direction:column;gap:8px}
+  .sidebar .nav a{display:block;padding:10px 12px;border-radius:10px;color:var(--muted);text-decoration:none;border:1px solid transparent}
+  .sidebar .nav a:hover{background:#fff;border-color:#eee;color:var(--accent);font-weight:700}
+  .sidebar .nav a.active{background:#fff;border-color:#eee;color:var(--accent);font-weight:800}
+  /* Main grid/menu */
+  .menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+  .card{background:var(--card-bg);border-radius:14px;padding:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center;transition:transform .18s}
+  .card:hover{transform:translateY(-6px)}
+  .card img{width:100%;height:150px;object-fit:cover;border-radius:10px}
+  .title{font-weight:700;margin-top:10px;text-align:center}
+  .price{margin-top:6px;font-weight:700}
+  .controls{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .qty{display:inline-flex;align-items:center;border-radius:8px;overflow:hidden;border:1px solid #eee}
+  .qty button{background:transparent;border:none;padding:8px 12px;cursor:pointer}
+  .qty span{display:inline-block;padding:8px 10px;min-width:28px;text-align:center}
+  .add-btn{background:var(--accent);color:white;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+  /* Right cart */
+  aside.cart{background:var(--card-bg);border-radius:14px;padding:16px;height:fit-content;position:sticky;top:92px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+  .cart h2{margin:0 0 12px 0}
+  .cart-list{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;padding-right:6px}
+  .cart-item{display:flex;gap:10px;align-items:center;transition:transform .15s}
+  .cart-item.shake{animation:shakeItem .35s}
+  @keyframes shakeItem{0%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}100%{transform:translateX(0)}}
+  .cart-item img{width:56px;height:46px;object-fit:cover;border-radius:8px}
+  .cart-item .meta{flex:1}
+  .cart-item .name{font-weight:700}
+  .cart-item .sub{font-size:13px;color:var(--muted)}
+  .cart-item .remove{background:transparent;border:0;color:#c62828;cursor:pointer}
+  .summary{border-top:1px dashed #eee;padding-top:12px;margin-top:12px}
+  .summary .row{display:flex;justify-content:space-between;margin:6px 0}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:120}
+  .modal{background:var(--card-bg);border-radius:12px;padding:18px;max-width:720px;width:96%;box-shadow:0 16px 40px rgba(0,0,0,0.35)}
+  .field{margin:8px 0;display:flex;flex-direction:column}
+  .field input, .field select{padding:10px;border-radius:8px;border:1px solid #eee}
+  .upi-grid{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .upi-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;border-radius:10px;background:#fafafa;cursor:pointer;border:1px solid #eee;width:110px}
+  .upi-btn img{width:60px;height:60px;object-fit:contain}
+  .qr-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .qr-card{background:#fff;border-radius:10px;padding:12px;border:1px solid #eee;text-align:center}
+  .qr-card img{width:180px;height:180px;object-fit:cover}
+  .success-stage{display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px}
+  .check{width:120px;height:120px;border-radius:999px;background:#e9f8ef;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,0.08)}
+  .check svg{width:80px;height:80px;fill:none;stroke:#2e7d32;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+  .confetti{position:fixed;left:0;top:0;pointer-events:none;width:100%;height:100%;z-index:130;overflow:hidden}
+  .bill{max-width:680px;margin:0 auto;padding:12px;background:#fff;border-radius:10px;border:1px solid #f0f0f0}
+  .bill header{display:flex;justify-content:space-between;align-items:center}
+  .bill .meta{font-size:13px;color:var(--muted)}
+  .bill table{width:100%;border-collapse:collapse;margin-top:12px}
+  .bill th, .bill td{padding:8px;border-bottom:1px solid #f2f2f2;text-align:left}
+  .bill .totals{margin-top:12px;display:flex;justify-content:flex-end;gap:12px;flex-direction:column;align-items:flex-end}
+  #cart-mini{display:none;position:fixed;left:16px;right:16px;bottom:18px;background:linear-gradient(90deg,#fff9f2,#fffefb);border-radius:12px;padding:12px;box-shadow:0 12px 30px rgba(0,0,0,0.12);display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:55}
+  .shake{animation:cartShake .4s}
+  @keyframes cartShake{0%{transform:translateY(0)}25%{transform:translateY(-6px)}50%{transform:translateY(4px)}75%{transform:translateY(-2px)}100%{transform:translateY(0)}}
+  @media(max-width:1100px){
+    .container{grid-template-columns:1fr; padding:12px}
+    aside.sidebar{order:-1;position:relative;top:auto}
+    aside.cart{position:relative;top:auto}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">ARB</div>
+    <div>
+      <h1>Arabian Cuisine — Menu</h1>
+      <div class="small">Hummus · Mandi · Baklava</div>
+    </div>
+  </div>
+  <div class="actions">
+    <nav style="display:flex;gap:8px;align-items:center">
+      <!-- Example cuisine links; cart will persist via localStorage -->
+      <a href="italian.html" class="small" style="text-decoration:none;color:var(--muted)"><b>Italian</b></a>
+      <a href="chinese.html" class="small" style="text-decoration:none;color:var(--muted)"><b>Chinese</b></a>
+      <a href="indian.html" class="small" style="text-decoration:none;color:var(--muted)"><b>Indian</b></a>
+      <a href="home page1.html" class="small" style="text-decoration:none;color:var(--muted)"><b><i>Home</i></b></a>
+    </nav>
+    <div id="user-greet" class="small" style="margin-left:10px"></div>
+    <button class="ghost" id="btn-logout" style="display:none">Logout</button>
+    <button class="primary" id="view-cart">View Cart (<span id="cart-count">0</span>)</button>
+  </div>
+</header>
+
+<main class="container">
+  <!-- Left fixed sidebar -->
+  <aside class="sidebar" aria-label="Categories">
+    <div style="font-weight:700;margin-bottom:8px">Categories</div>
+    <div class="nav" id="left-nav">
+      <a href="#starters" data-target="starters">Starters</a>
+      <a href="#mains" data-target="mains">Main Dish</a>
+      <a href="#desserts" data-target="desserts">Desserts</a>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <section>
+    <h2 id="starters" style="margin:0 0 12px 0">Starters</h2>
+    <div class="menu" id="starters-menu"></div>
+
+    <h2 id="mains" style="margin:18px 0 12px 0">Main Dishes</h2>
+    <div class="menu" id="mains-menu"></div>
+
+    <h2 id="desserts" style="margin:18px 0 12px 0">Desserts</h2>
+    <div class="menu" id="desserts-menu"></div>
+  </section>
+
+  <!-- Right cart -->
+  <aside class="cart" id="cart-aside">
+    <h2>Your Order</h2>
+    <div class="cart-list" id="cart-list">
+      <div class="small">No items yet — add dishes from the menu.</div>
+    </div>
+
+    <div class="summary">
+      <div class="row"><span>Subtotal</span><strong id="subtotal">₹0.00</strong></div>
+      <div class="row"><span>Tax (5%)</span><strong id="tax">₹0.00</strong></div>
+      <div class="row"><span>Delivery</span><strong id="delivery">₹40.00</strong></div>
+      <div class="row" style="font-size:18px"><span>Total</span><strong id="total">₹0.00</strong></div>
+      <div style="margin-top:10px">
+        <button class="primary" id="btn-checkout">Proceed to Pay</button>
+        <button class="ghost" id="btn-clear">Clear</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<footer style="text-align:center;padding:18px;color:var(--muted)">Built with ❤️ — demo ordering page</footer>
+
+<!-- LOGIN modal (requires address fields) -->
+<div id="login-modal" class="modal-backdrop" role="dialog" aria-modal="true">
+  <div class="modal" role="document">
+    <h3>Login to continue</h3>
+    <div class="field"><label>Username</label><input id="login-user" placeholder="Enter your name" /></div>
+    <div class="field"><label>Password</label><input id="login-pass" type="password" placeholder="Password" /></div>
+    <div class="field"><label>Phone Number</label><input id="login-phone" type="tel" placeholder="Enter your phone number" maxlength="10" pattern="[0-9]{10}" /></div>
+    <div class="field"><label>Building No</label><input id="login-bno" placeholder="Building / Flat No" /></div>
+    <div class="field"><label>Landmark</label><input id="login-landmark" placeholder="Nearby landmark" /></div>
+    <div class="field"><label>Pincode</label><input id="login-pin" placeholder="6-digit pincode" /></div>
+    <div class="field"><label>Full Address</label><input id="login-address" placeholder="Street, Area, City" /></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="ghost" id="login-cancel">Cancel</button>
+      <button class="primary" id="login-btn">Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT modal -->
+<div id="payment-modal" class="modal-backdrop">
+  <div class="modal">
+    <h3>Payment</h3>
+    <div class="field">
+      <label>Choose payment method</label>
+      <select id="payment-method">
+        <option value="upi">UPI</option>
+        <option value="card">Card</option>
+        <option value="cod">Cash on Delivery</option>
+      </select>
+    </div>
+
+    <div id="upi-section" style="display:none">
+      <div class="small">Choose an app to pay (we show QR automatically):</div>
+      <div class="upi-grid" id="upi-grid">
+        <div class="upi-btn" data-app="gpay"><img src="google pay.png" alt="GPay"><div>GPay</div></div>
+        <div class="upi-btn" data-app="phonepe"><img src="phone pe.png" alt="PhonePe"><div>PhonePe</div></div>
+        <div class="upi-btn" data-app="paytm"><img src="paytm.png" alt="Paytm"><div>Paytm</div></div>
+      </div>
+
+      <div class="qr-wrap" id="qr-wrap" style="display:none">
+        <div class="qr-card">
+          <div class="small">Scan this QR with your UPI app</div>
+          <img id="qr-img" src="qr code.png" alt="QR">
+          <div class="small" style="margin-top:8px">UPI ID: <strong id="pay-upi">italian.shop@upi</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="card-section" style="display:none">
+      <div class="field"><label>Card number</label><input id="card" placeholder="1234 5678 9012 3456" /></div>
+      <div style="display:flex;gap:8px">
+        <div class="field" style="flex:1"><label>Expiry</label><input id="exp" placeholder="MM/YY" /></div>
+        <div class="field" style="flex:1"><label>CVV</label><input id="cvv" placeholder="123" /></div>
+      </div>
+    </div>
+
+    <div class="field small">Amount to pay: <strong id="pay-amount">₹0.00</strong></div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="ghost" id="pay-cancel">Cancel</button>
+      <button class="primary" id="pay-now">Pay</button>
+    </div>
+  </div>
+</div>
+
+<!-- BILL + SUCCESS modal -->
+<div id="bill-modal" class="modal-backdrop" aria-hidden="true">
+  <div class="modal" id="bill-modal-inner" role="dialog" aria-modal="true">
+    <div id="success-stage" style="display:none" class="success-stage">
+      <div class="check" aria-hidden="true"><svg viewBox="0 0 52 52" aria-hidden="true"><path d="M14 27 L22 34 L38 16"></path></svg></div>
+      <div style="font-weight:700;font-size:20px">Payment Successful!</div>
+      <div class="small">Generating your bill...</div>
+    </div>
+
+    <div id="bill-stage" style="display:none">
+      <div class="bill" id="bill-content">
+        <header style="align-items:flex-start">
+          <div><h2 style="margin:0">Italian Cuisine</h2><div class="meta" id="bill-meta-left"></div></div>
+          <div class="meta" id="bill-meta-right"></div>
+        </header>
+
+        <table>
+          <thead><tr><th>Item</th><th style="width:60px">Qty</th><th style="width:110px">Price</th><th style="width:110px">Total</th></tr></thead>
+          <tbody id="bill-items"></tbody>
+        </table>
+
+        <div class="totals">
+          <div style="width:320px">
+            <div class="row"><div style="display:flex;justify-content:space-between"><div>Subtotal</div><div id="bill-subtotal"></div></div></div>
+            <div class="row"><div style="display:flex;justify-content:space-between"><div>Tax (5%)</div><div id="bill-tax"></div></div></div>
+            <div class="row"><div style="display:flex;justify-content:space-between"><div>Delivery</div><div id="bill-delivery"></div></div></div>
+            <hr>
+            <div style="display:flex;justify-content:space-between;font-weight:800;font-size:18px"><div>Total</div><div id="bill-total"></div></div>
+            <div style="margin-top:10px;font-size:13px;color:var(--muted)">Deliver to:</div>
+            <div style="font-size:14px" id="bill-address"></div>
+            <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+              <button class="ghost" id="bill-close">Close</button>
+              <button class="primary" id="bill-print">Print / Download</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- confetti -->
+<div id="confetti" class="confetti" aria-hidden="true"></div>
+
+<!-- mini cart -->
+<div id="cart-mini">
+  <div class="mini">Items: <strong id="mini-count">0</strong> — <span id="mini-total">₹0.00</span></div>
+  <div style="display:flex;gap:8px"><button class="ghost" id="mini-view">View</button><button class="primary" id="mini-checkout">Checkout</button></div>
+</div>
+
+<script>
+/* Data: Real Italian menu items (starters, mains, desserts) */
+const MENU = {
+  starters:[
+    {id:'as1',name:'Bruschetta al Pomodoro',price:140,img:'https://images.unsplash.com/photo-1543362906-acfc16c67564?auto=format&fit=crop&w=800&q=60'},
+    {id:'as2',name:'Caprese Salad',price:180,img:'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?auto=format&fit=crop&w=800&q=60'},
+    {id:'as3',name:'bread',price:120,img:'https://images.unsplash.com/photo-1545088989-6f67e3f6e4fe?auto=format&fit=crop&w=800&q=60'},
+    {id:'as4',name:'Minestrone Soup',price:150,img:'https://images.unsplash.com/photo-1526312426976-3d33f6b8a48f?auto=format&fit=crop&w=800&q=60'}
+  ],
+  mains:[
+    {id:'am1',name:'Margherita Pizza',price:350,img:'https://images.unsplash.com/photo-1548365328-6c9d937a2032?auto=format&fit=crop&w=800&q=60'},
+    {id:'am2',name:'Lasagna alla Bolognese',price:360,img:'https://images.unsplash.com/photo-1604908177540-b1b7c9e5ee1f?auto=format&fit=crop&w=800&q=60'},
+    {id:'am3',name:'Spaghetti Carbonara',price:280,img:'https://images.unsplash.com/photo-1603133872871-c0b3d1a7c3a6?auto=format&fit=crop&w=800&q=60'},
+    {id:'am4',name:'Risotto alla Milanese',price:320,img:'https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&w=800&q=60'}
+  ],
+  desserts:[
+    {id:'ad1',name:'Tiramisu',price:140,img:'https://images.unsplash.com/photo-1604908177569-5c4f78f12b0c?auto=format&fit=crop&w=800&q=60'},
+    {id:'ad2',name:'Panna Cotta',price:130,img:'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=60'},
+    {id:'ad3',name:'Gelato (2 scoops)',price:120,img:'https://images.unsplash.com/photo-1527515637464-5c54f5b2a0f8?auto=format&fit=crop&w=800&q=60'}
+  ]
+};
+
+/* State */
+let USER = null, USER_ADDR = '', CART = {}, chosenUPI = null;
+
+/* Local storage keys */
+const STORAGE_CART = 'site_cart_v1';
+const STORAGE_USER = 'site_user_v1';
+
+/* Utilities */
+function fmt(n){ return '₹' + Number(n).toFixed(2); }
+function uid(prefix='IT'){ return prefix + '-' + Math.floor(Math.random()*900000 + 100000); }
+
+function saveCart(){
+  try{ localStorage.setItem(STORAGE_CART, JSON.stringify(CART)); }
+  catch(e){ console.warn('Unable to save cart', e); }
+}
+function loadCart(){
+  try{
+    const raw = localStorage.getItem(STORAGE_CART);
+    if(raw){ CART = JSON.parse(raw) || {}; }
+  }catch(e){ console.warn('Unable to load cart', e); CART = {}; }
+}
+function saveUser(){
+  try{ localStorage.setItem(STORAGE_USER, JSON.stringify({user:USER, addr: USER_ADDR})); }
+  catch(e){ console.warn('Unable to save user', e); }
+}
+function loadUser(){
+  try{
+    const raw = localStorage.getItem(STORAGE_USER);
+    if(raw){
+      const u = JSON.parse(raw);
+      USER = u.user || null; USER_ADDR = u.addr || '';
+      if(USER){ document.getElementById('user-greet').textContent = 'Hello, ' + USER; document.getElementById('btn-logout').style.display='inline-block'; }
+    }
+  }catch(e){ console.warn('Unable to load user', e); }
+}
+
+/* Render menu into the three sections */
+function renderMenu(){
+  const makeCard = (item) => {
+    const el = document.createElement('div'); el.className='card';
+    el.innerHTML = `
+      <img src="${item.img}" alt="${item.name}">
+      <div class="title">${item.name}</div>
+      <div class="price">${fmt(item.price)}</div>
+      <div class="controls">
+        <div class="qty" data-id="${item.id}">
+          <button class="dec">-</button><span class="q">0</span><button class="inc">+</button>
+        </div>
+        <button class="add-btn">Add</button>
+      </div>`;
+    // events
+    const qEl = el.querySelector('.q');
+    el.querySelector('.inc').addEventListener('click', ()=> qEl.textContent = Number(qEl.textContent) + 1);
+    el.querySelector('.dec').addEventListener('click', ()=> qEl.textContent = Math.max(0, Number(qEl.textContent) - 1));
+    el.querySelector('.add-btn').addEventListener('click', ()=> {
+      const q = Number(qEl.textContent);
+      if(q<=0){ alert('Increase quantity first'); return; }
+      addToCart(item, q);
+      qEl.textContent = 0;
+      const cm = document.getElementById('cart-mini'); cm.classList.add('shake'); setTimeout(()=>cm.classList.remove('shake'),350);
+    });
+    return el;
+  };
+
+  const startersContainer = document.getElementById('starters-menu');
+  const mainsContainer = document.getElementById('mains-menu');
+  const dessertsContainer = document.getElementById('desserts-menu');
+  startersContainer.innerHTML = ''; mainsContainer.innerHTML = ''; dessertsContainer.innerHTML = '';
+
+  MENU.starters.forEach(i => startersContainer.appendChild(makeCard(i)));
+  MENU.mains.forEach(i => mainsContainer.appendChild(makeCard(i)));
+  MENU.desserts.forEach(i => dessertsContainer.appendChild(makeCard(i)));
+}
+
+/* Cart functions */
+function addToCart(item, qty){
+  if(CART[item.id]) CART[item.id].qty += qty; else CART[item.id] = { item, qty };
+  updateCartUI();
+}
+function removeFromCart(id){
+  const list = document.getElementById('cart-list'); const node = Array.from(list.children).find(n=>n.dataset && n.dataset.id===id);
+  if(node){ node.classList.add('shake'); setTimeout(()=>{ delete CART[id]; updateCartUI(); },260); } else { delete CART[id]; updateCartUI(); }
+}
+function updateCartUI(){
+  const list = document.getElementById('cart-list'); list.innerHTML=''; const keys = Object.keys(CART);
+  if(keys.length===0){ list.innerHTML = '<div class="small">No items yet — add dishes from the menu.</div>'; }
+  else keys.forEach(k=>{
+    const e = CART[k]; const row = document.createElement('div'); row.className='cart-item'; row.dataset.id = k;
+    row.innerHTML = `<img src="${e.item.img}"><div class="meta"><div class="name">${e.item.name}</div><div class="sub">${fmt(e.item.price)} x ${e.qty}</div></div><div style="text-align:right"><div><strong>${fmt(e.item.price * e.qty)}</strong></div><div style="margin-top:6px"><button class="remove">Remove</button></div></div>`;
+    row.querySelector('.remove').addEventListener('click', ()=> removeFromCart(k)); list.appendChild(row);
+  });
+  const subtotal = keys.reduce((s,k)=> s + CART[k].item.price * CART[k].qty, 0);
+  const tax = subtotal * 0.05; const delivery = keys.length ? 40 : 0; const total = subtotal + tax + delivery;
+  document.getElementById('subtotal').textContent = fmt(subtotal); document.getElementById('tax').textContent = fmt(tax);
+  document.getElementById('delivery').textContent = fmt(delivery); document.getElementById('total').textContent = fmt(total);
+  document.getElementById('pay-amount').textContent = fmt(total); document.getElementById('cart-count').textContent = keys.reduce((s,k)=> s + CART[k].qty,0);
+  const cm = document.getElementById('cart-mini');
+  if(Object.keys(CART).length > 0){ cm.style.display='flex'; document.getElementById('mini-count').textContent = keys.reduce((s,k)=> s + CART[k].qty,0); document.getElementById('mini-total').textContent = fmt(total); }
+  else cm.style.display='none';
+
+  // Persist cart to localStorage
+  saveCart();
+}
+
+/* Login modal functions */
+function showLogin(){ document.getElementById('login-modal').style.display='flex'; }
+function hideLogin(){ document.getElementById('login-modal').style.display='none'; }
+
+document.getElementById('login-cancel').addEventListener('click', ()=> hideLogin());
+
+document.getElementById('login-btn').addEventListener('click', ()=>{
+  const u=document.getElementById('login-user').value.trim(), p=document.getElementById('login-pass').value.trim();
+  const bno=document.getElementById('login-bno').value.trim(), lm=document.getElementById('login-landmark').value.trim();
+  const pin=document.getElementById('login-pin').value.trim(), addr=document.getElementById('login-address').value.trim();
+  if(!u||!p||!bno||!lm||!pin||!addr){ alert('Please fill all login & address fields.'); return; }
+  if(!/^\d{6}$/.test(pin)){ alert('Pincode must be 6 digits'); return; }
+  USER = u; USER_ADDR = `${bno}, ${addr} (Landmark: ${lm}) — ${pin}`;
+  document.getElementById('user-greet').textContent = 'Hello, ' + USER; document.getElementById('btn-logout').style.display='inline-block';
+  hideLogin();
+  saveUser();
+});
+
+/* Logout */
+document.getElementById('btn-logout').addEventListener('click', ()=>{
+  if(confirm('Logout?')) {
+    USER=null; USER_ADDR=''; document.getElementById('user-greet').textContent=''; document.getElementById('btn-logout').style.display='none';
+    localStorage.removeItem(STORAGE_USER);
+  }
+});
+
+/* Payment flow */
+document.getElementById('btn-checkout').addEventListener('click', ()=>{
+  if(Object.keys(CART).length === 0){ alert('Cart empty'); return; }
+  if(!USER){ showLogin(); return; } // show login first if not logged in
+  // open payment modal
+  document.getElementById('payment-modal').style.display='flex'; document.getElementById('payment-method').value='upi'; togglePaymentSections('upi');
+});
+
+function togglePaymentSections(mode){ document.getElementById('upi-section').style.display = mode === 'upi' ? 'block' : 'none'; document.getElementById('card-section').style.display = mode === 'card' ? 'block' : 'none'; }
+document.getElementById('payment-method').addEventListener('change', (e)=> togglePaymentSections(e.target.value));
+document.getElementById('pay-cancel').addEventListener('click', ()=> document.getElementById('payment-modal').style.display='none');
+
+document.querySelectorAll('.upi-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    chosenUPI = btn.dataset.app; document.getElementById('qr-wrap').style.display='flex'; document.getElementById('pay-upi').textContent = 'italian.shop@upi';
+    document.querySelectorAll('.upi-btn').forEach(x=>x.style.borderColor='#eee'); btn.style.borderColor='var(--accent)';
+  });
+});
+
+/* Pay now */
+document.getElementById('pay-now').addEventListener('click', ()=>{
+  const method = document.getElementById('payment-method').value;
+  if(method === 'card'){ const card=document.getElementById('card').value.trim(), exp=document.getElementById('exp').value.trim(), cvv=document.getElementById('cvv').value.trim();
+    if(card.length<12||exp.length<3||cvv.length<3){ alert('Enter valid card details (demo)'); return; } }
+  if(method === 'upi' && !chosenUPI){ alert('Select a UPI app and scan the QR (demo)'); return; }
+  document.getElementById('payment-modal').style.display='none';
+  const billModal=document.getElementById('bill-modal'), successStage=document.getElementById('success-stage'), billStage=document.getElementById('bill-stage');
+  billModal.style.display='flex'; successStage.style.display='flex'; billStage.style.display='none'; runConfetti();
+  setTimeout(()=>{ successStage.style.display='none'; billStage.style.display='block'; populateBill(); }, 1400);
+});
+
+/* Bill and print */
+function populateBill(){
+  const id = uid('IT'); const now = new Date(), timeStr = now.toLocaleString();
+  const tbody = document.getElementById('bill-items'); tbody.innerHTML=''; const keys = Object.keys(CART); let subtotal=0;
+  keys.forEach(k=>{ const c=CART[k]; const tr=document.createElement('tr'); tr.innerHTML=`<td>${c.item.name}</td><td>${c.qty}</td><td>${fmt(c.item.price)}</td><td>${fmt(c.item.price*c.qty)}</td>`; tbody.appendChild(tr); subtotal += c.item.price*c.qty; });
+  const tax = subtotal*0.05, delivery = keys.length ? 40 : 0, total = subtotal + tax + delivery;
+  document.getElementById('bill-meta-left').innerHTML = `<div class="meta">Order ID: <strong>${id}</strong><br>Placed: ${timeStr}</div>`;
+  document.getElementById('bill-meta-right').innerHTML = `<div class="meta">Customer: <strong>${USER||'Guest'}</strong><br><span class="small">${USER_ADDR}</span></div>`;
+  document.getElementById('bill-subtotal').textContent = fmt(subtotal); document.getElementById('bill-tax').textContent = fmt(tax); document.getElementById('bill-delivery').textContent = fmt(delivery); document.getElementById('bill-total').textContent = fmt(total); document.getElementById('bill-address').textContent = USER_ADDR;
+  // After showing bill we clear cart (simulate order placement)
+  CART = {}; saveCart(); updateCartUI();
+}
+document.getElementById('bill-close').addEventListener('click', ()=> document.getElementById('bill-modal').style.display='none');
+document.getElementById('bill-print').addEventListener('click', ()=>{ const billHtml = document.getElementById('bill-content').outerHTML; const w=window.open('','_blank','width=800,height=900'); w.document.write('<html><head><title>Invoice</title><style>body{font-family:Arial;padding:20px}</style></head><body>'); w.document.write(billHtml); w.document.write('</body></html>'); w.document.close(); w.focus(); setTimeout(()=>w.print(),500); });
+
+/* Confetti */
+function runConfetti(){ const container=document.getElementById('confetti'); container.innerHTML=''; const colors=['#ff5252','#ffd54f','#66bb6a','#42a5f5','#ab47bc']; for(let i=0;i<40;i++){ const el=document.createElement('div'); el.style.position='absolute'; el.style.left=Math.random()*100+'%'; el.style.top='-10%'; el.style.width=Math.random()*10+6+'px'; el.style.height=Math.random()*14+8+'px'; el.style.background=colors[Math.floor(Math.random()*colors.length)]; el.style.opacity=0.95; el.style.transform='rotate('+Math.random()*360+'deg)'; el.style.borderRadius='2px'; el.style.animation=`confetti-fall ${2+Math.random()*1.8}s linear forwards`; el.style.zIndex=9999; container.appendChild(el); } const styleTag=document.createElement('style'); styleTag.innerHTML='@keyframes confetti-fall{to{transform:translate3d(0,110vh,0) rotate(360deg);opacity:0.9}}'; document.head.appendChild(styleTag); setTimeout(()=>{ container.innerHTML=''; document.head.removeChild(styleTag); },3200); }
+
+/* Mini cart controls */
+document.getElementById('mini-view').addEventListener('click', ()=> document.querySelector('aside.cart').scrollIntoView({behavior:'smooth'}));
+document.getElementById('mini-checkout').addEventListener('click', ()=> document.getElementById('btn-checkout').click());
+
+/* Clear & view */
+document.getElementById('btn-clear').addEventListener('click', ()=>{ if(confirm('Clear your cart?')){ CART={}; saveCart(); updateCartUI(); }});
+document.getElementById('view-cart').addEventListener('click', ()=> document.querySelector('aside.cart').scrollIntoView({behavior:'smooth'}));
+
+/* Left-nav active state and smooth scroll highlight */
+const navLinks = document.querySelectorAll('#left-nav a');
+function setActiveNav(){
+  const fromTop = window.scrollY + 120; // offset for header
+  navLinks.forEach(link => {
+    const target = document.getElementById(link.dataset.target);
+    if(!target) return;
+    if(target.offsetTop <= fromTop && (target.offsetTop + target.offsetHeight) > fromTop){
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+}
+window.addEventListener('scroll', setActiveNav);
+navLinks.forEach(a => a.addEventListener('click', (e)=> {
+  // default anchor scroll is fine; close mobile view if needed
+}));
+
+/* Init: load user & cart, render menu */
+function init(){
+  loadUser();
+  loadCart();
+  renderMenu();
+  updateCartUI();
+  setActiveNav();
+  // Remove any auto login popup — login only on checkout
+}
+init();
+
+/* Ensure saving cart on unload as well */
+window.addEventListener('beforeunload', saveCart);
+
+</script>
+
+</body>
+</html>
